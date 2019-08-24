@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/navigation_dLeft"
+        android:icon="@drawable/doubleleft"
+        android:title="@string/dLeft" />
+    <item
+        android:id="@+id/navigation_left"
+        android:icon="@drawable/leftchevron"
+        android:title="@string/left" />
+
+    <item
+        android:id="@+id/navigation_right"
+        android:icon="@drawable/rightchevron"
+        android:title="@string/right"/>
+        <!--app:actionLayout="@layout/activity_label_data" />-->
+
+    <item
+        android:id="@+id/navigation_dRight"
+        android:icon="@drawable/doubleright"
+        android:title="@string/dRight"/>
+        <!--app:actionLayout="@layout/activity_label_data"/>-->
+
+</menu>
