@@ -1,4 +1,4 @@
-package com.example.labeling;
+package com.example.labeling.DataStorage;
 
 import io.realm.RealmObject;
 

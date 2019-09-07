@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,6 +15,13 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Toast;
+
+import com.example.labeling.DataStorage.ImageUri_;
+import com.example.labeling.DataStorage.Labels_;
+import com.example.labeling.DataStorage.NoPack;
+import com.example.labeling.DataStorage.PackOfData;
+import com.example.labeling.DataStorage.Text_;
+import com.example.labeling.DataStorage.VideoUri_;
 import com.example.labeling.reqAndRes.HttpHelper;
 import com.google.gson.Gson;
 import java.io.IOException;
@@ -235,14 +241,14 @@ public class LabelData extends AppCompatActivity {
                             fragments = mAdapter.getFragments();
                             mAdapter.setFragments(fragments);
                             viewPager.setAdapter(mAdapter);
-                        return true;
                         }
+                        return true;
                     case R.id.navigation_right:
-                        if (noPackInShow < realm.where(PackOfData.class).findAll().size()) {
+                        if (noPackInShow < realm.where(PackOfData.class).max("noPack_").intValue()) {
 //                            Toast.makeText(getApplicationContext(),noPackInShow +"", Toast.LENGTH_SHORT).show();
 //                            flagForChangePack = 3;
                             noPackInShow++;
-                            Toast.makeText(getApplicationContext(),noPackInShow +"", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),realm.where(PackOfData.class).max("noPack_").intValue() +"", Toast.LENGTH_SHORT).show();
                             packInShow = realm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
                             imageUrlFromDB.clear();
                             for (int i = 0; i < packInShow.getImageUri().size(); i++) {
@@ -263,8 +269,8 @@ public class LabelData extends AppCompatActivity {
                             fragments = mAdapter.getFragments();
                             mAdapter.setFragments(fragments);
                             viewPager.setAdapter(mAdapter);
-                        return true;
                         }
+                        return true;
                 }
                 return false;
             }

@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.labeling.DataStorage.PackOfData;
+
 import java.util.List;
 
 public class MyPager extends PagerAdapter {

@@ -1,17 +1,11 @@
-package com.example.labeling;
+package com.example.labeling.DataStorage;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-
 import io.realm.RealmList;
 import io.realm.RealmObject;
-import io.realm.annotations.PrimaryKey;
 
 public class PackOfData extends RealmObject implements Serializable {
-    //    private String[] text;
-//    private String[] imageUri;
-//    private String[] videoUri;
-//    private String[] labels;
+
     public RealmList<Text_> text = new RealmList<>();
     public RealmList<ImageUri_> imageUri = new RealmList<>();
     public RealmList<VideoUri_> videoUri = new RealmList<>();
@@ -24,7 +18,6 @@ public class PackOfData extends RealmObject implements Serializable {
     }
 
     //getter-setters
-
     public RealmList<Text_> getText() {
         return text;
     }

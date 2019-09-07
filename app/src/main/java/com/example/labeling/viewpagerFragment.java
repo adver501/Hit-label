@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -27,11 +28,12 @@ public class viewpagerFragment extends Fragment {
     String imageid;
     String textid;
     String videoid;
-    private CoutProgressBar coutProgressBar;
+    private CoutProgressBar pBar;
 //    public viewpagerFragment(Context context) {
 //        this.context = context;
 //    }
 
+    @BindView(R.id.root_layout) ConstraintLayout rootLayout;
     @BindView(R.id.myText) TextView tv;
     @BindView(R.id.myImage) ImageView iv;
     @BindView(R.id.myVideo) VideoView vv;
@@ -87,6 +89,8 @@ public class viewpagerFragment extends Fragment {
             Log.i("success", "text placed");
         }
         if (videoid != null){
+            pBar = new CoutProgressBar(rootLayout,getActivity().getApplicationContext());
+            pBar.show();
             vv.setVisibility(View.VISIBLE);
             Uri uri = Uri.parse(videoid);
             vv.setVideoURI(uri);
@@ -95,7 +99,7 @@ public class viewpagerFragment extends Fragment {
             vv.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
-
+                    pBar.dismiss();
                 }
             });
         }
