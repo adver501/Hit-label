@@ -116,4 +116,6 @@
     <string name="dRight">end</string>
     <string name="end_of_images">end</string>
     <string name="start_of_images">start</string>
+    <string name="Text_of_fragment">new fragment</string>
+    <string name="Description_of_images_in_fragments">imageNotLoaded</string>
 </resources>

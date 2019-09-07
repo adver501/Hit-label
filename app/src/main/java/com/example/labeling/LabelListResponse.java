@@ -5,13 +5,13 @@ import com.example.labeling.reqAndRes.FailedSuccessResponse;
 import java.util.List;
 
 public class LabelListResponse extends FailedSuccessResponse {
-    private List<AllLabels> labelQ;
+    private List<Labels_> labelQ;
 
-    public List<AllLabels> getLabelQ() {
+    public List<Labels_> getLabelQ() {
         return labelQ;
     }
 
-    public void setLabelQ(List<AllLabels> labelQ) {
+    public void setLabelQ(List<Labels_> labelQ) {
         this.labelQ = labelQ;
     }
 }

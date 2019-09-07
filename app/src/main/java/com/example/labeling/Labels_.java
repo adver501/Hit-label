@@ -1,10 +1,10 @@
 package com.example.labeling;
 
-public class AllLabels {
+import io.realm.RealmObject;
+
+public class Labels_ extends RealmObject {
     private String labels;
-    //constructor
-    public AllLabels() {
-    }
+
     //getter-setters
     public String getLabels() {
         return labels;
