@@ -1,8 +1,10 @@
 package com.example.labeling;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -16,17 +18,24 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Toast;
 
+import com.example.labeling.DataStorage.CommonUserLabelSelected;
 import com.example.labeling.DataStorage.ImageUri_;
+import com.example.labeling.DataStorage.LabelsList;
 import com.example.labeling.DataStorage.Labels_;
+import com.example.labeling.DataStorage.MasterUserLabelSelected;
+import com.example.labeling.DataStorage.NoLabelList;
 import com.example.labeling.DataStorage.NoPack;
 import com.example.labeling.DataStorage.PackOfData;
 import com.example.labeling.DataStorage.Text_;
 import com.example.labeling.DataStorage.VideoUri_;
 import com.example.labeling.reqAndRes.HttpHelper;
 import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import butterknife.BindView;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmList;
@@ -38,24 +47,40 @@ import okhttp3.Response;
 
 public class LabelData extends AppCompatActivity {
 
-    private ViewPager viewPager;
+//    @BindView(R.id.viewPager)
+    ViewPager viewPager;
+//    @BindView(R.id.Tag_fab)
+    FloatingActionButton tagFab;
+//    @BindView(R.id.Load_fab)
+    FloatingActionButton loadFab;
+//    @BindView(R.id.start_of_data)
+//    ImageButton leftBtn;
+//    @BindView(R.id.end_of_data)
+//    ImageButton rightBtn;
+//    @BindView(R.id.nv)
+    BottomNavigationView bottomNavigation;
+
 //    private DataListResponse res;
 //    private CircleIndicator circleIndicator;
 
     FragmentsPagerAdapter mAdapter;
 
     private ArrayList<CheckBox> chItems;
-    private String[] label;
+    private ArrayList<String> checkedLabels = new ArrayList<>();
     private int noPackInShow;
     public PackOfData packInShow;
-    private Realm realm;
+    private Realm dataRealm;
+    private Realm labelRealm;
     public int flagForChangePack = 0;
     public static ArrayList<String> imageUrlFromDB = new ArrayList<String>();
     public static ArrayList<String> textFromDB = new ArrayList<String>();
     public static ArrayList<String> videoUrlFromDB = new ArrayList<String>();
     private String[] imageUrlF;
-    static BottomNavigationView bottomNavigation;
     List<Fragment> fragments;
+    private LabelsList labelsInShow;
+    private int noLabelListInShow;
+    int tagClickCnt = 0;
+    int loadClickCnt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,52 +102,63 @@ public class LabelData extends AppCompatActivity {
         noPackInShow = 1;
         Realm.init(this);
         RealmConfiguration myconfig = new RealmConfiguration.Builder()
-                .name("mRealm.realm")
+                .name("DRealm8.realm")
                 .schemaVersion(3)
                 .build();
-        realm = Realm.getInstance(myconfig);
-        realm.beginTransaction();
+        RealmConfiguration myconfig1 = new RealmConfiguration.Builder()
+                .name("LRealm8.realm")
+                .schemaVersion(3)
+                .build();
+        dataRealm = Realm.getInstance(myconfig);
+        labelRealm = Realm.getInstance(myconfig1);
+
         /*
         first PackOfData that will be save in database.
          */
         RealmList<Text_> t1 = new RealmList<>();
         RealmList<ImageUri_> i1 = new RealmList<>();
         RealmList<VideoUri_> v1 = new RealmList<>();
-        RealmList<Labels_> l1 = new RealmList<>();
 
-        Text_ mt1 = new Text_();
-        mt1.setText("my first text in pack to show");
-        final Text_ managedText1 = realm.copyToRealm(mt1); // Persist unmanaged objects
-        t1.add(mt1);
+        PackOfData packExist1 = dataRealm.where(PackOfData.class).equalTo("noPack_", 1).findFirst();
+        if (packExist1 == null) {
+            dataRealm.beginTransaction();
+            Text_ mt1 = new Text_();
+            mt1.setText("my first text in pack to show");
+            final Text_ managedText1 = dataRealm.copyToRealm(mt1); // Persist unmanaged objects
+            t1.add(mt1);
 
-        ImageUri_ mi1 = new ImageUri_();
-        mi1.setImageUri("https://www.imgurl.ir/uploads/a801954_.jpg");
-        final ImageUri_ managedImageUri1 = realm.copyToRealm(mi1); // Persist unmanaged objects
-        i1.add(mi1);
+            ImageUri_ mi1 = new ImageUri_();
+            mi1.setImageUri("https://www.imgurl.ir/uploads/a801954_.jpg");
+            final ImageUri_ managedImageUri1 = dataRealm.copyToRealm(mi1); // Persist unmanaged objects
+            i1.add(mi1);
 
-        ImageUri_ mi2 = new ImageUri_();
-        mi2.setImageUri("https://www.imgurl.ir/uploads/n061181_.jpg");
-        final ImageUri_ managedImageUri2 = realm.copyToRealm(mi2); // Persist unmanaged objects
-        i1.add(mi2);
+            ImageUri_ mi2 = new ImageUri_();
+            mi2.setImageUri("https://www.imgurl.ir/uploads/n061181_.jpg");
+            final ImageUri_ managedImageUri2 = dataRealm.copyToRealm(mi2); // Persist unmanaged objects
+            i1.add(mi2);
 
-        ImageUri_ mi3 = new ImageUri_();
-        mi3.setImageUri("https://www.imgurl.ir/uploads/x5262_.jpg");
-        final ImageUri_ managedImageUri3 = realm.copyToRealm(mi3); // Persist unmanaged objects
-        i1.add(mi3);
+            ImageUri_ mi3 = new ImageUri_();
+            mi3.setImageUri("https://www.imgurl.ir/uploads/x5262_.jpg");
+            final ImageUri_ managedImageUri3 = dataRealm.copyToRealm(mi3); // Persist unmanaged objects
+            i1.add(mi3);
 
-        VideoUri_ mv1 = new VideoUri_();
-        mv1.setVideoUri("https://www.imgurl.ir/uploads/t666542_.mp4");
-        final VideoUri_ managedVideoUri1 = realm.copyToRealm(mv1); // Persist unmanaged objects
-        v1.add(mv1);
+            VideoUri_ mv1 = new VideoUri_();
+            mv1.setVideoUri("https://www.imgurl.ir/uploads/t666542_.mp4");
+            final VideoUri_ managedVideoUri1 = dataRealm.copyToRealm(mv1); // Persist unmanaged objects
+            v1.add(mv1);
 
-        Labels_ ml1 = new Labels_();
-        ml1.setLabels("");
-        final Labels_ managedLabels1 = realm.copyToRealm(ml1);
-        l1.add(ml1);
+//        Labels_ ml1 = new Labels_();
+//        ml1.setLabels("red");
+//        final Labels_ managedLabels1 = dataRealm.copyToRealm(ml1);
+//        l1.add(ml1);
 
-        NoPack n1 = new NoPack();
-        n1.setNoPack(1);
-        final NoPack managedNoPack1 = realm.copyToRealm(n1);
+            NoPack n1 = new NoPack();
+            n1.setNoPack(1);
+//            final NoPack managedNoPack1 = dataRealm.copyToRealm(n1);
+
+//        Labels_ ml2 = new Labels_();
+//        ml1.setLabels("green");
+//        final Labels_ managedLabels2 = dataRealm.copyToRealm(ml2);
 
 
 //        PackOfData p1 = new PackOfData();
@@ -132,58 +168,55 @@ public class LabelData extends AppCompatActivity {
 //        p1.setImageUri(i1);
 //        p1.setVideoUri(v1);
 
-        PackOfData packOfData1 = realm.createObject(PackOfData.class); // Create managed objects directly
-        packOfData1.getText().add(managedText1);
-        packOfData1.setNoPack(managedNoPack1);
-        packOfData1.getImageUri().add(managedImageUri1);
-        packOfData1.getImageUri().add(managedImageUri2);
-        packOfData1.getImageUri().add(managedImageUri3);
-        packOfData1.getVideoUri().add(managedVideoUri1);
-        packOfData1.getLabels().add(managedLabels1);
-        realm.commitTransaction();
+            PackOfData packOfData1 = dataRealm.createObject(PackOfData.class, 1); // Create managed objects directly
+            packOfData1.getText().add(managedText1);
+//            packOfData1.setNoPack(managedNoPack1);
+            packOfData1.getImageUri().add(managedImageUri1);
+            packOfData1.getImageUri().add(managedImageUri2);
+            packOfData1.getImageUri().add(managedImageUri3);
+            packOfData1.getVideoUri().add(managedVideoUri1);
+            dataRealm.commitTransaction();
+        }
 //        pODDAO.save(p1, this);
         /*
         second PackOfData that will be save in database
          */
-        realm.beginTransaction();
-        RealmList<Text_> t2 = new RealmList<>();
-        RealmList<ImageUri_> i2 = new RealmList<>();
-        RealmList<VideoUri_> v2 = new RealmList<>();
-        RealmList<Labels_> l2 = new RealmList<>();
+        PackOfData packExist2 = dataRealm.where(PackOfData.class).equalTo("noPack_", 2).findFirst();
+        if (packExist2 == null) {
+            dataRealm.beginTransaction();
+            RealmList<Text_> t2 = new RealmList<>();
+            RealmList<ImageUri_> i2 = new RealmList<>();
+            RealmList<VideoUri_> v2 = new RealmList<>();
+            RealmList<Labels_> l2 = new RealmList<>();
 
-        Text_ mt2 = new Text_();
-        mt2.setText("my second text in pack to show");
-        final Text_ managedText2 = realm.copyToRealm(mt2); // Persist unmanaged objects
-        t2.add(mt1);
+            Text_ mt2 = new Text_();
+            mt2.setText("my second text in pack to show");
+            final Text_ managedText2 = dataRealm.copyToRealm(mt2); // Persist unmanaged objects
+            t2.add(mt2);
 
-        ImageUri_ mi4 = new ImageUri_();
-        mi4.setImageUri("https://imgurl.ir/uploads/m961881_.jpg");
-        final ImageUri_ managedImageUri4 = realm.copyToRealm(mi4); // Persist unmanaged objects
-        i2.add(mi4);
+            ImageUri_ mi4 = new ImageUri_();
+            mi4.setImageUri("https://imgurl.ir/uploads/m961881_.jpg");
+            final ImageUri_ managedImageUri4 = dataRealm.copyToRealm(mi4); // Persist unmanaged objects
+            i2.add(mi4);
 
-        ImageUri_ mi5 = new ImageUri_();
-        mi5.setImageUri("https://imgurl.ir/uploads/b687218_.jpg");
-        final ImageUri_ managedImageUri5 = realm.copyToRealm(mi5); // Persist unmanaged objects
-        i2.add(mi5);
+            ImageUri_ mi5 = new ImageUri_();
+            mi5.setImageUri("https://imgurl.ir/uploads/b687218_.jpg");
+            final ImageUri_ managedImageUri5 = dataRealm.copyToRealm(mi5); // Persist unmanaged objects
+            i2.add(mi5);
 
-        ImageUri_ mi6 = new ImageUri_();
-        mi6.setImageUri("https://imgurl.ir/uploads/b522675_.jpg");
-        final ImageUri_ managedImageUri6 = realm.copyToRealm(mi6); // Persist unmanaged objects
-        i2.add(mi6);
+            ImageUri_ mi6 = new ImageUri_();
+            mi6.setImageUri("https://imgurl.ir/uploads/b522675_.jpg");
+            final ImageUri_ managedImageUri6 = dataRealm.copyToRealm(mi6); // Persist unmanaged objects
+            i2.add(mi6);
 
-        VideoUri_ mv2 = new VideoUri_();
-        mv2.setVideoUri("https://imgurl.ir/uploads/y304_.mp4");
-        final VideoUri_ managedVideoUri2 = realm.copyToRealm(mv2); // Persist unmanaged objects
-        v2.add(mv2);
+            VideoUri_ mv2 = new VideoUri_();
+            mv2.setVideoUri("https://imgurl.ir/uploads/y304_.mp4");
+            final VideoUri_ managedVideoUri2 = dataRealm.copyToRealm(mv2); // Persist unmanaged objects
+            v2.add(mv2);
 
-        Labels_ ml2 = new Labels_();
-        ml2.setLabels("");
-        final Labels_ managedLabels2 = realm.copyToRealm(ml1);
-        l2.add(ml2);
-
-        NoPack n2 = new NoPack();
-        n2.setNoPack(2);
-        final NoPack managedNoPack2 = realm.copyToRealm(n2);
+            NoPack n2 = new NoPack();
+            n2.setNoPack(2);
+//            final NoPack managedNoPack2 = dataRealm.copyToRealm(n2);
 
 //        PackOfData p2 = new PackOfData();
 //        p2.setNoPack(2);
@@ -193,20 +226,67 @@ public class LabelData extends AppCompatActivity {
 //        p2.setVideoUri(v2);
 //        pODDAO.save(p2, this);
 
-        PackOfData packOfData2 = realm.createObject(PackOfData.class); // Create managed objects directly
-        packOfData2.getText().add(managedText2);
-        packOfData2.setNoPack(managedNoPack2);
-        packOfData2.getImageUri().add(managedImageUri4);
-        packOfData2.getImageUri().add(managedImageUri5);
-        packOfData2.getImageUri().add(managedImageUri6);
-        packOfData2.getVideoUri().add(managedVideoUri2);
-        packOfData2.getLabels().add(managedLabels2);
-        realm.commitTransaction();
+            PackOfData packOfData2 = dataRealm.createObject(PackOfData.class, 2); // Create managed objects directly
+            packOfData2.getText().add(managedText2);
+//            packOfData2.setNoPack(managedNoPack2);
+            packOfData2.getImageUri().add(managedImageUri4);
+            packOfData2.getImageUri().add(managedImageUri5);
+            packOfData2.getImageUri().add(managedImageUri6);
+            packOfData2.getVideoUri().add(managedVideoUri2);
+//        packOfData2.getLabels().add(managedLabels2);
+            dataRealm.commitTransaction();
+        }
+        LabelsList listExist = labelRealm.where(LabelsList.class).equalTo("noList_", 1).findFirst();
+        if (listExist == null) {
+            labelRealm.beginTransaction();
 
-        Toast.makeText(this, realm.getPath(), Toast.LENGTH_LONG).show();
+            Labels_ lb1 = new Labels_();
+            lb1.setLabels("red");
+            final Labels_ managedLabel1 = labelRealm.copyToRealm(lb1);
+//        labelRealm.commitTransaction();
+
+//        labelRealm.beginTransaction();
+            Labels_ lb2 = new Labels_();
+            lb2.setLabels("green");
+            final Labels_ managedLabel2 = labelRealm.copyToRealm(lb2);
+//        labelRealm.commitTransaction();
+
+//        labelRealm.beginTransaction();
+            Labels_ lb3 = new Labels_();
+            lb3.setLabels("yellow");
+            final Labels_ managedLabel3 = labelRealm.copyToRealm(lb3);
+//        labelRealm.commitTransaction();
+
+//        labelRealm.beginTransaction();
+            Labels_ lb4 = new Labels_();
+            lb4.setLabels("pink");
+            final Labels_ managedLabel4 = labelRealm.copyToRealm(lb4);
+//        labelRealm.commitTransaction();
+
+//        labelRealm.beginTransaction();
+            Labels_ lb5 = new Labels_();
+            lb5.setLabels("brown");
+            final Labels_ managedLabel5 = labelRealm.copyToRealm(lb5);
+//        labelRealm.commitTransaction();
+
+//        labelRealm.beginTransaction();
+            NoLabelList noLabelList = new NoLabelList();
+            noLabelList.setNoList(1);
+            final NoLabelList managednoList1 = labelRealm.copyToRealm(noLabelList);
+
+            LabelsList labelslist1 = labelRealm.createObject(LabelsList.class);
+            labelslist1.getLabels().add(managedLabel1);
+            labelslist1.getLabels().add(managedLabel2);
+            labelslist1.getLabels().add(managedLabel3);
+            labelslist1.getLabels().add(managedLabel4);
+            labelslist1.getLabels().add(managedLabel5);
+            labelslist1.setNoLabelList(managednoList1);
+            labelRealm.commitTransaction();
+        }
+//        Toast.makeText(this, labelRealm.getPath(), Toast.LENGTH_LONG).show();
 
 
-//        packInShow = realm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+//        packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
 
 
         bottomNavigation = findViewById(R.id.nv);
@@ -218,20 +298,20 @@ public class LabelData extends AppCompatActivity {
                         if (noPackInShow > 1) {
 //                            flagForChangePack = 2;
                             noPackInShow--;
-                            Toast.makeText(getApplicationContext(),noPackInShow +"", Toast.LENGTH_SHORT).show();
-                            packInShow = realm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+                            Toast.makeText(getApplicationContext(), noPackInShow + "", Toast.LENGTH_SHORT).show();
+                            packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
                             imageUrlFromDB.clear();
                             for (int i = 0; i < packInShow.getImageUri().size(); i++) {
                                 imageUrlFromDB.add(packInShow.imageUri.get(i).getImageUri());
                                 Log.i("get imageUri from DB(L)", packInShow.imageUri.get(i).getImageUri());
                             }
                             textFromDB.clear();
-                            for (int i = 0; i < packInShow.getText().size(); i++){
+                            for (int i = 0; i < packInShow.getText().size(); i++) {
                                 textFromDB.add(packInShow.text.get(i).getText());
                                 Log.i("get text from DB(L)", "Done");
                             }
                             videoUrlFromDB.clear();
-                            for (int i = 0; i < packInShow.getVideoUri().size(); i++){
+                            for (int i = 0; i < packInShow.getVideoUri().size(); i++) {
                                 videoUrlFromDB.add(packInShow.videoUri.get(i).getVideoUri());
                                 Log.i("get video from DB(L)", "Done");
                             }
@@ -244,19 +324,19 @@ public class LabelData extends AppCompatActivity {
                         }
                         return true;
                     case R.id.navigation_right:
-                        if (noPackInShow < realm.where(PackOfData.class).max("noPack_").intValue()) {
+                        if (noPackInShow < dataRealm.where(PackOfData.class).max("noPack_").intValue()) {
 //                            Toast.makeText(getApplicationContext(),noPackInShow +"", Toast.LENGTH_SHORT).show();
 //                            flagForChangePack = 3;
                             noPackInShow++;
-                            Toast.makeText(getApplicationContext(),realm.where(PackOfData.class).max("noPack_").intValue() +"", Toast.LENGTH_SHORT).show();
-                            packInShow = realm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+                            Toast.makeText(getApplicationContext(), dataRealm.where(PackOfData.class).max("noPack_").intValue() + "", Toast.LENGTH_SHORT).show();
+                            packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
                             imageUrlFromDB.clear();
                             for (int i = 0; i < packInShow.getImageUri().size(); i++) {
                                 imageUrlFromDB.add(packInShow.imageUri.get(i).getImageUri());
                                 Log.i("get imageUri from DB(R)", packInShow.imageUri.get(i).getImageUri());
                             }
                             textFromDB.clear();
-                            for (int i = 0; i < packInShow.getText().size(); i++){
+                            for (int i = 0; i < packInShow.getText().size(); i++) {
                                 textFromDB.add(packInShow.text.get(i).getText());
                                 Log.i("get text from DB(R)", "Done");
                             }
@@ -281,55 +361,100 @@ public class LabelData extends AppCompatActivity {
         final LinearLayout ll = new LinearLayout(this);
         ll.setOrientation(LinearLayout.VERTICAL);
         sv.addView(ll);
+        myLayout.addView(sv);
 
 //        TextView tv = new TextView(this);
 //        tv.setText("Dynamic layouts ftw!");
 //        ll.addView(tv);
 
-        Button saveLabelSelectedBtn = new Button(this);
-        saveLabelSelectedBtn.setText("stick labels to this pack");
-        saveLabelSelectedBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        saveLabelSelectedBtn.setBackgroundColor(getResources().getColor(R.color.backGroundBtn1));
-        ll.addView(saveLabelSelectedBtn);
-        Button loadLabelBtn = new Button(this);
-        loadLabelBtn.setText("load labels from server");
-        loadLabelBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        loadLabelBtn.setBackgroundColor(getResources().getColor(R.color.backGroundBtn2));
-        ll.addView(loadLabelBtn);
+//        Button saveSelectedLabelsBtn = new Button(this);
+//        saveSelectedLabelsBtn.setText("stick labels to this pack");
+//        saveSelectedLabelsBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+//        saveSelectedLabelsBtn.setBackgroundColor(getResources().getColor(R.color.backGroundBtn1));
+//        ll.addView(saveSelectedLabelsBtn);
+//        Button loadLabelBtn = new Button(this);
+//        loadLabelBtn.setText("load labels from server");
+//        loadLabelBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+//        loadLabelBtn.setBackgroundColor(getResources().getColor(R.color.backGroundBtn2));
+//        ll.addView(loadLabelBtn);
 
+        noLabelListInShow = 1;
+//        loadLabelBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                labelsInShow = labelRealm.where(LabelsList.class).equalTo("noList_", noLabelListInShow).findFirst();
+//                for (int i = 0; i < labelsInShow.getLabels().size(); i++) {
+//                    CheckBox chb = new CheckBox(getApplicationContext());
+////                    chb.setText(loadLabels().get(i).getLabels());
+//                    chb.setText(labelsInShow.getLabels().get(i).getLabels());
+//                    ll.addView(chb);
+//                    chItems.add(chb);
+//                }
+//            }
+//        });
 
-        loadLabelBtn.setOnClickListener(new View.OnClickListener() {
+        loadFab = findViewById(R.id.Load_fab);
+        loadFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (int i = 0; i < loadLabels().size(); i++) {
-                    CheckBox chb = new CheckBox(getApplicationContext());
-                    chb.setText(loadLabels().get(i).getLabels());
-                    ll.addView(chb);
-                    chItems.add(chb);
-                }
-            }
-        });
-
-        //click this button after that select your checkbox to save labels in
-        // database.
-        saveLabelSelectedBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                int j = 0;
-                for (int i = 0; i < chItems.size(); i++) {
-                    if (chItems.get(i).isChecked()) {
-//                        mydb.insertData(chItems.get(i).getText().toString());
-                        label[j] = chItems.get(i).getText().toString();
-                        j++;
+                loadClickCnt++;
+                if (loadClickCnt == 1) {
+                    labelsInShow = labelRealm.where(LabelsList.class).equalTo("noList_", noLabelListInShow).findFirst();
+                    for (int i = 0; i < labelsInShow.getLabels().size(); i++) {
+                        CheckBox chb = new CheckBox(getApplicationContext());
+//                    chb.setText(loadLabels().get(i).getLabels());
+                        chb.setText(labelsInShow.getLabels().get(i).getLabels());
+                        ll.addView(chb);
+                        chItems.add(chb);
                     }
                 }
-//                hitLabel(loadData().get(noPackInShow), label);
             }
         });
-        myLayout.addView(sv);
+//        FloatingActionButton tagFab =
+
+//        Intent i = getIntent();
+        String userType /*= i.getExtras().getString("userType")*/;
+        userType = "Master";
+        //click this button after that select your checkbox to save labels in
+        // database.
+//        saveSelectedLabelsBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                // TODO Auto-generated method stub
+//                checkedLabels.clear();
+//                int j = 0;
+//                for (int i = 0; i < chItems.size(); i++) {
+//                    if (chItems.get(i).isChecked()) {
+////                        mydb.insertData(chItems.get(i).getText().toString());
+//                        checkedLabels.add(chItems.get(i).getText().toString());
+//                        j++;
+//                    }
+//                }
+//                hitLabels(userType);
+//            }
+//        });
+        tagFab = findViewById(R.id.Tag_fab);
+        tagFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tagClickCnt++;
+                if (tagClickCnt == 1) {
+                    checkedLabels.clear();
+                    int j = 0;
+                    for (int i = 0; i < chItems.size(); i++) {
+                        if (chItems.get(i).isChecked()) {
+//                        mydb.insertData(chItems.get(i).getText().toString());
+                            checkedLabels.add(chItems.get(i).getText().toString());
+                            j++;
+                        }
+                    }
+                    hitLabels(userType);
+                }
+            }
+        });
 
     }
+
     private ArrayList<PackOfData> loadData() {
         final ArrayList<PackOfData> items = new ArrayList<>();
 
@@ -403,8 +528,37 @@ public class LabelData extends AppCompatActivity {
         return items;
     }
 
-    private void hitLabel(PackOfData pod, RealmList<Labels_> labelSelected) {
-        pod.setLabels(labelSelected);
+    private void hitLabels(String userType) {
+        for (int i = 0; i < checkedLabels.size(); i++) {
+            if (userType == "Common") {
+                dataRealm.beginTransaction();
+                CommonUserLabelSelected culs = new CommonUserLabelSelected();
+                culs.setCLabels(checkedLabels.get(i));
+                final CommonUserLabelSelected managedCuls = dataRealm.copyToRealmOrUpdate(culs);
+                PackOfData pod = new PackOfData();
+                pod.getComUsrLabelsSelected().add(managedCuls);
+                NoPack nt = new NoPack();
+                nt.setNoPack(noPackInShow);
+                final NoPack managedNoPackT = dataRealm.copyToRealmOrUpdate(nt);
+                pod.setNoPack(managedNoPackT);
+                dataRealm.copyToRealmOrUpdate(pod);
+                dataRealm.commitTransaction();
+            }
+            if (userType == "Master") {
+                dataRealm.beginTransaction();
+                MasterUserLabelSelected muls = new MasterUserLabelSelected();
+                muls.setMLabels(checkedLabels.get(i));
+//                final MasterUserLabelSelected managedMuls = dataRealm.copyToRealmOrUpdate(muls);
+                PackOfData pod = new PackOfData();
+                pod.getMasUsrLabelsSelected().add(muls);
+                NoPack nt = new NoPack();
+                nt.setNoPack(noPackInShow);
+//                final NoPack managedNoPackT = dataRealm.copyToRealmOrUpdate(nt);
+                pod.setNoPack(nt);
+                dataRealm.copyToRealmOrUpdate(pod);
+                dataRealm.commitTransaction();
+            }
+        }
     }
 
     private ArrayList<Labels_> loadLabels() {

@@ -106,6 +106,13 @@ public class viewpagerFragment extends Fragment {
         return view;
     }
 
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        vv.pause();
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
