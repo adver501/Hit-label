@@ -16,6 +16,7 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.labeling.DataStorage.CommonUserLabelSelected;
@@ -35,7 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmList;
@@ -52,7 +52,7 @@ public class LabelData extends AppCompatActivity {
 //    @BindView(R.id.Tag_fab)
     FloatingActionButton tagFab;
 //    @BindView(R.id.Load_fab)
-    FloatingActionButton loadFab;
+    FloatingActionButton loadFab, percentFab;
 //    @BindView(R.id.start_of_data)
 //    ImageButton leftBtn;
 //    @BindView(R.id.end_of_data)
@@ -66,6 +66,7 @@ public class LabelData extends AppCompatActivity {
     FragmentsPagerAdapter mAdapter;
 
     private ArrayList<CheckBox> chItems;
+    private ArrayList<TextView> tvItems = new ArrayList<>();
     private ArrayList<String> checkedLabels = new ArrayList<>();
     private int noPackInShow;
     public PackOfData packInShow;
@@ -81,6 +82,7 @@ public class LabelData extends AppCompatActivity {
     private int noLabelListInShow;
     int tagClickCnt = 0;
     int loadClickCnt = 0;
+    ArrayList<Integer> noEachLabelSelected = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,11 +104,11 @@ public class LabelData extends AppCompatActivity {
         noPackInShow = 1;
         Realm.init(this);
         RealmConfiguration myconfig = new RealmConfiguration.Builder()
-                .name("DRealm8.realm")
+                .name("DRealm10.realm")
                 .schemaVersion(3)
                 .build();
         RealmConfiguration myconfig1 = new RealmConfiguration.Builder()
-                .name("LRealm8.realm")
+                .name("LRealm10.realm")
                 .schemaVersion(3)
                 .build();
         dataRealm = Realm.getInstance(myconfig);
@@ -268,6 +270,13 @@ public class LabelData extends AppCompatActivity {
             lb5.setLabels("brown");
             final Labels_ managedLabel5 = labelRealm.copyToRealm(lb5);
 //        labelRealm.commitTransaction();
+            Labels_ lb6 = new Labels_();
+            lb6.setLabels("grey");
+            final Labels_ managedLabel6 = labelRealm.copyToRealm(lb6);
+
+            Labels_ lb7 = new Labels_();
+            lb7.setLabels("grey");
+            final Labels_ managedLabel7 = labelRealm.copyToRealm(lb7);
 
 //        labelRealm.beginTransaction();
             NoLabelList noLabelList = new NoLabelList();
@@ -280,6 +289,8 @@ public class LabelData extends AppCompatActivity {
             labelslist1.getLabels().add(managedLabel3);
             labelslist1.getLabels().add(managedLabel4);
             labelslist1.getLabels().add(managedLabel5);
+            labelslist1.getLabels().add(managedLabel6);
+            labelslist1.getLabels().add(managedLabel7);
             labelslist1.setNoLabelList(managednoList1);
             labelRealm.commitTransaction();
         }
@@ -288,12 +299,40 @@ public class LabelData extends AppCompatActivity {
 
 //        packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
 
-
         bottomNavigation = findViewById(R.id.nv);
         bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
+                    case R.id.navigation_dLeft:
+                        if (noPackInShow > 1) {
+//                            flagForChangePack = 2;
+                            noPackInShow = 1;
+                            Toast.makeText(getApplicationContext(), noPackInShow + "", Toast.LENGTH_SHORT).show();
+                            packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+                            imageUrlFromDB.clear();
+                            for (int i = 0; i < packInShow.getImageUri().size(); i++) {
+                                imageUrlFromDB.add(packInShow.imageUri.get(i).getImageUri());
+                                Log.i("get imageUri from DB(L)", packInShow.imageUri.get(i).getImageUri());
+                            }
+                            textFromDB.clear();
+                            for (int i = 0; i < packInShow.getText().size(); i++) {
+                                textFromDB.add(packInShow.text.get(i).getText());
+                                Log.i("get text from DB(L)", "Done");
+                            }
+                            videoUrlFromDB.clear();
+                            for (int i = 0; i < packInShow.getVideoUri().size(); i++) {
+                                videoUrlFromDB.add(packInShow.videoUri.get(i).getVideoUri());
+                                Log.i("get video from DB(L)", "Done");
+                            }
+
+                            mAdapter = new FragmentsPagerAdapter(getSupportFragmentManager());
+//                            fragmentTransaction = LabelData.this.getSupportFragmentManager().beginTransaction();
+                            fragments = mAdapter.getFragments();
+                            mAdapter.setFragments(fragments);
+                            viewPager.setAdapter(mAdapter);
+                        }
+                        return true;
                     case R.id.navigation_left:
                         if (noPackInShow > 1) {
 //                            flagForChangePack = 2;
@@ -318,6 +357,34 @@ public class LabelData extends AppCompatActivity {
 
                             mAdapter = new FragmentsPagerAdapter(getSupportFragmentManager());
 //                            fragmentTransaction = LabelData.this.getSupportFragmentManager().beginTransaction();
+                            fragments = mAdapter.getFragments();
+                            mAdapter.setFragments(fragments);
+                            viewPager.setAdapter(mAdapter);
+                        }
+                        return true;
+                    case R.id.navigation_dRight:
+                        if (noPackInShow < dataRealm.where(PackOfData.class).max("noPack_").intValue()) {
+//                            Toast.makeText(getApplicationContext(),noPackInShow +"", Toast.LENGTH_SHORT).show();
+//                            flagForChangePack = 3;
+                            noPackInShow = dataRealm.where(PackOfData.class).max("noPack_").intValue();
+                            Toast.makeText(getApplicationContext(), noPackInShow + "", Toast.LENGTH_SHORT).show();
+                            packInShow = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+                            imageUrlFromDB.clear();
+                            for (int i = 0; i < packInShow.getImageUri().size(); i++) {
+                                imageUrlFromDB.add(packInShow.imageUri.get(i).getImageUri());
+                                Log.i("get imageUri from DB(R)", packInShow.imageUri.get(i).getImageUri());
+                            }
+                            textFromDB.clear();
+                            for (int i = 0; i < packInShow.getText().size(); i++) {
+                                textFromDB.add(packInShow.text.get(i).getText());
+                                Log.i("get text from DB(R)", "Done");
+                            }
+                            videoUrlFromDB.clear();
+                            for (int i = 0; i < packInShow.getVideoUri().size(); i++) {
+                                videoUrlFromDB.add(packInShow.videoUri.get(i).getVideoUri());
+                                Log.i("get video from DB(R)", "Done");
+                            }
+                            mAdapter = new FragmentsPagerAdapter(getSupportFragmentManager());
                             fragments = mAdapter.getFragments();
                             mAdapter.setFragments(fragments);
                             viewPager.setAdapter(mAdapter);
@@ -356,12 +423,12 @@ public class LabelData extends AppCompatActivity {
             }
         });
 
-        LinearLayout myLayout = findViewById(R.id.root_of_labels);
-        ScrollView sv = new ScrollView(this);
-        final LinearLayout ll = new LinearLayout(this);
-        ll.setOrientation(LinearLayout.VERTICAL);
-        sv.addView(ll);
-        myLayout.addView(sv);
+//        LinearLayout myLayout = findViewById(R.id.root_of_labels);
+//        ScrollView sv = new ScrollView(this);
+        LinearLayout ll = findViewById(R.id.llinSV);
+//        ll.setOrientation(LinearLayout.VERTICAL);
+//        sv.addView(ll);
+//        myLayout.addView(sv);
 
 //        TextView tv = new TextView(this);
 //        tv.setText("Dynamic layouts ftw!");
@@ -393,6 +460,35 @@ public class LabelData extends AppCompatActivity {
 //            }
 //        });
 
+        percentFab = findViewById(R.id.percent_fab);
+        percentFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PackOfData pd = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+                LabelsList lal = labelRealm.where(LabelsList.class).equalTo("noList_", noLabelListInShow).findFirst();
+
+                for (int i = 0; i < lal.getLabels().size(); i++)
+                    noEachLabelSelected.add(0);
+                for (int i = 0; i < lal.getLabels().size(); i++) {
+                    for (int j = 0; j < pd.getMasUsrLabelsSelected().size(); j++) {
+                        Log.i("all labels", lal.getLabels().get(i).getLabels() + " | " + pd.getMasUsrLabelsSelected().get(j).getMLabels() + " | " + pd.getMasUsrLabelsSelected().size());
+                        if (lal.getLabels().get(i).getLabels().equals(pd.getMasUsrLabelsSelected().get(j).getMLabels())) {
+                            int temp = noEachLabelSelected.remove(i);
+                            Log.i("temp=", temp + " " + noEachLabelSelected.size());
+                            temp++;
+                            noEachLabelSelected.add(i,temp);
+                        }
+                    }
+                }
+                for (int i = 0; i < lal.getLabels().size(); i++) {
+                    float f = noEachLabelSelected.get(i) / pd.getMasUsrLabelsSelected().size();
+                    Log.i("noels=", noEachLabelSelected.get(i) + "");
+                    int resPercent = (int) Math.floor(f * 100);
+                    tvItems.get(i).setText("   " + resPercent + "%");
+                }
+            }
+        });
+
         loadFab = findViewById(R.id.Load_fab);
         loadFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -401,11 +497,23 @@ public class LabelData extends AppCompatActivity {
                 if (loadClickCnt == 1) {
                     labelsInShow = labelRealm.where(LabelsList.class).equalTo("noList_", noLabelListInShow).findFirst();
                     for (int i = 0; i < labelsInShow.getLabels().size(); i++) {
+                        LinearLayout lnl = new LinearLayout(getApplicationContext());
+                        lnl.setOrientation(LinearLayout.HORIZONTAL);
                         CheckBox chb = new CheckBox(getApplicationContext());
+                        TextView txtv = new TextView(getApplicationContext());
+                        txtv.setId(View.generateViewId());
+                        txtv.setText("   0%");
+
 //                    chb.setText(loadLabels().get(i).getLabels());
                         chb.setText(labelsInShow.getLabels().get(i).getLabels());
-                        ll.addView(chb);
+                        txtv.setTag(chb.getText().toString());
+                        lnl.addView(chb);
+                        lnl.addView(txtv);
+                        ll.addView(lnl);
+//                        PackOfData pd = dataRealm.where(PackOfData.class).equalTo("noPack_", noPackInShow).findFirst();
+//                        pd.getMasUsrLabelsSelected();
                         chItems.add(chb);
+                        tvItems.add(txtv);
                     }
                 }
             }
@@ -449,6 +557,7 @@ public class LabelData extends AppCompatActivity {
                         }
                     }
                     hitLabels(userType);
+                    Toast.makeText(getApplicationContext(),"Done", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -529,36 +638,43 @@ public class LabelData extends AppCompatActivity {
     }
 
     private void hitLabels(String userType) {
+        PackOfData pod = new PackOfData();
         for (int i = 0; i < checkedLabels.size(); i++) {
             if (userType == "Common") {
-                dataRealm.beginTransaction();
+//                dataRealm.beginTransaction();
                 CommonUserLabelSelected culs = new CommonUserLabelSelected();
                 culs.setCLabels(checkedLabels.get(i));
-                final CommonUserLabelSelected managedCuls = dataRealm.copyToRealmOrUpdate(culs);
-                PackOfData pod = new PackOfData();
-                pod.getComUsrLabelsSelected().add(managedCuls);
-                NoPack nt = new NoPack();
-                nt.setNoPack(noPackInShow);
-                final NoPack managedNoPackT = dataRealm.copyToRealmOrUpdate(nt);
-                pod.setNoPack(managedNoPackT);
-                dataRealm.copyToRealmOrUpdate(pod);
-                dataRealm.commitTransaction();
+//                final CommonUserLabelSelected managedCuls = dataRealm.copyToRealmOrUpdate(culs);
+//                PackOfData pod = new PackOfData();
+                pod.getComUsrLabelsSelected().add(culs);
+//                NoPack nt = new NoPack();
+//                nt.setNoPack(noPackInShow);
+//                final NoPack managedNoPackT = dataRealm.copyToRealmOrUpdate(nt);
+//                pod.noPack_ = noPackInShow;
+//                dataRealm.copyToRealmOrUpdate(pod);
+//                dataRealm.commitTransaction();
             }
+
             if (userType == "Master") {
-                dataRealm.beginTransaction();
+//                dataRealm.beginTransaction();
                 MasterUserLabelSelected muls = new MasterUserLabelSelected();
                 muls.setMLabels(checkedLabels.get(i));
 //                final MasterUserLabelSelected managedMuls = dataRealm.copyToRealmOrUpdate(muls);
-                PackOfData pod = new PackOfData();
+
                 pod.getMasUsrLabelsSelected().add(muls);
-                NoPack nt = new NoPack();
-                nt.setNoPack(noPackInShow);
+//                NoPack nt = new NoPack();
+//                nt.setNoPack(noPackInShow);
 //                final NoPack managedNoPackT = dataRealm.copyToRealmOrUpdate(nt);
-                pod.setNoPack(nt);
-                dataRealm.copyToRealmOrUpdate(pod);
-                dataRealm.commitTransaction();
+//                pod.setNoPack(nt);
+//                pod.noPack_ = noPackInShow;
+//                dataRealm.copyToRealmOrUpdate(pod);
+//                dataRealm.commitTransaction();
             }
         }
+        pod.noPack_ = noPackInShow;
+        dataRealm.beginTransaction();
+        dataRealm.copyToRealmOrUpdate(pod);
+        dataRealm.commitTransaction();
     }
 
     private ArrayList<Labels_> loadLabels() {
